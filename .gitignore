@@ -1,0 +1,10 @@
+node_modules/
+tests/.tmp/
+__pycache__/
+
+# planilhas reais nunca entram; só as duas do modelo/
+*.xlsx
+!modelo/Controle_Notas_modelo.xlsx
+!modelo/Controle_Notas_exemplo.xlsx
+*.ndjson
+*.osts

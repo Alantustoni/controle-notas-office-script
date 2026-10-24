@@ -1,6 +1,6 @@
-# Controle de Notas por e-mail — Office Script + Power Automate
+# E-mail + Nota = Excel — Office Script + Power Automate
 
-[![tests](https://github.com/Alantustoni/controle-notas-office-script/actions/workflows/tests.yml/badge.svg)](https://github.com/Alantustoni/controle-notas-office-script/actions/workflows/tests.yml)
+[![tests](https://github.com/Alantustoni/email-nota-excel/actions/workflows/tests.yml/badge.svg)](https://github.com/Alantustoni/email-nota-excel/actions/workflows/tests.yml)
 
 O setor de Compras avisa por e-mail quais notas fiscais chegaram. Este
 projeto transforma esses e-mails numa planilha centralizada, sem digitação

@@ -1,5 +1,5 @@
 {
-  "name": "controle-notas-office-script",
+  "name": "email-nota-excel",
   "version": "1.3.0",
   "description": "Office Script + Power Automate: registra no Excel as notas fiscais comunicadas por e-mail",
   "private": true,

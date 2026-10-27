@@ -140,3 +140,44 @@ test("data sem fuso é recusada (evita gravar horário errado)", () => {
   const { workbook } = planilhaFalsa();
   assert.throws(() => S.main(workbook, "msg-1", "2026-11-03 13:00", "a@b.com", "x", TABELA), /Data inválida/);
 });
+
+// ── casos frequentes em produção (e-mails fictícios com o mesmo formato) ──
+test("desconto: lê valores do TOTAL, tira a empresa do assunto e manda para revisão", () => {
+  const corpo = `<table>
+    <tr><th>FORNECEDOR</th><th>NF</th><th>VALOR NOTA FISCAL</th><th>DIFERENÇA</th><th>VALOR LÍQUIDO</th></tr>
+    <tr><td>Gases Modelo Ltda</td><td>8120</td><td>1.500,00</td><td>150,00</td><td>1.350,00</td></tr>
+    <tr><td>TOTAL</td><td></td><td>1.500,00</td><td>150,00</td><td>1.350,00</td></tr></table>`;
+  const r = S.interpretar("DESCONTO: GASES MODELO X ALFAMETAL", corpo);
+  assert.equal(r.notas.length, 1);
+  const n = r.notas[0];
+  assert.equal(n.tipo, "Desconto informado");
+  assert.equal(n.empresa, "ALFAMETAL");
+  assert.deepEqual([n.valorNF, n.diferenca, n.liquido], [1500, 150, 1350]);
+  assert.ok(r.pendencias.some((p) => p.tipo === "Validar desconto/ajuste"));
+});
+
+test("NF igual à AF é preservada e sinalizada, sem concluir que é erro", () => {
+  const corpo = `<p>Empresa: ALFAMETAL</p><table>
+    <tr><th>FOR</th><th>FORNECEDOR</th><th>NF</th><th>AF</th><th>VENCIMENTO</th></tr>
+    <tr><td>2210</td><td>Usinagem Fictícia Ltda</td><td>5530</td><td>5530</td><td>20/11/2026</td></tr></table>`;
+  const r = S.interpretar("ENVIO DE NOTA FISCAL", corpo);
+  assert.equal(r.notas[0].nf, "5530");
+  assert.equal(r.notas[0].af, "5530");
+  assert.ok(r.pendencias.some((p) => p.tipo === "NF igual à AF"));
+});
+
+test("pedido de adiantamento sem NF fica fora dos totais e vai para revisão", () => {
+  const corpo = `<p>Empresa: BETAVIARIA</p><p>Solicitamos adiantamento conforme proposta.</p><p>AF: 5620</p><p>Atenciosamente,<br>Compras</p>`;
+  const r = S.interpretar("PAGAMENTO - Montagens Exemplo Ltda", corpo);
+  assert.equal(r.notas.length, 1);
+  assert.equal(r.notas[0].nf, "");
+  assert.equal(r.notas[0].af, "5620");
+  assert.equal(r.notas[0].fornecedor, "Montagens Exemplo Ltda");
+  assert.ok(r.pendencias.some((p) => p.tipo === "Adiantamento sem NF"));
+});
+
+test("e-mail sem tabela nem rótulos ('segue em anexo') não inventa nota", () => {
+  const r = S.interpretar("NF Peças Exemplo", "<p>Boa tarde, segue nota em anexo.</p><p>Atenciosamente,<br>Compras</p>");
+  assert.equal(r.notas.length, 0);
+  assert.ok(r.pendencias.some((p) => p.tipo === "Formato não reconhecido"));
+});

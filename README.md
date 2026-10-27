@@ -15,6 +15,24 @@ Outlook ──► Power Automate ──► Office Script ──► Excel (tbNota
 Está em uso num setor de contas a pagar real desde set/2026. Neste
 repositório, empresas, fornecedores e e-mails são **fictícios**.
 
+### Primeiro mês em produção (28/09 → 27/10/2026)
+
+| | |
+|---|---|
+| E-mails de Compras processados | **122** |
+| Registros gravados na planilha | **1.081** (1.151 NFs: há linhas com "NF1/NF2") |
+| Fornecedores distintos | **352** |
+| Maior e-mail (notas numa única mensagem) | **91** |
+| Digitação manual | **nenhuma** |
+| Casos encaminhados para conferência humana | **80**, nenhum gravado em silêncio |
+
+Os 80 casos da aba Revisao, por tipo: desconto/ajuste a validar (49),
+formato não reconhecido (9), campos incompletos (7), possível duplicidade
+(4), layout sem identificação (3), NF igual à AF (2), adiantamento sem NF
+(2), possível vínculo entre registros (2), reenvio idêntico (1), corpo
+extenso (1). São contagens da planilha de produção; nenhum dado dela está
+neste repositório.
+
 ![Planilha de exemplo](docs/img/exemplo-notas.png)
 
 > **English summary** — An Excel Office Script, triggered by Power Automate
@@ -22,8 +40,9 @@ repositório, empresas, fornecedores e e-mails são **fictícios**.
 > (nested tables, rowspan/colspan, label-only text) and logs each invoice
 > into Excel tables. It is idempotent per message ID, flags possible
 > duplicates without blocking them, never guesses missing fields, and
-> neutralizes formula injection. 15 tests run in Node against a mocked
-> workbook.
+> neutralizes formula injection. In its first month in production it logged
+> 1,081 records from 122 e-mails with no manual typing. 19 tests run in Node
+> against a mocked workbook.
 
 ## O que ele faz
 
@@ -43,6 +62,11 @@ repositório, empresas, fornecedores e e-mails são **fictícios**.
 - **ENC/RES.** Se a mesma relação de notas aparece repetida no histórico da
   conversa, ela conta uma vez. Se aparecem relações diferentes, nenhuma é
   escolhida em silêncio: vira pendência.
+- **Descontos, ajustes e adiantamentos.** E-mail com assunto `DESCONTO:`
+  tem os valores da linha TOTAL (valor da NF, diferença, líquido) e a
+  empresa do assunto (`... X EMPRESA`) transcritos, e vai para revisão:
+  instrução por e-mail não autoriza pagamento. Pedido de adiantamento sem
+  NF é registrado fora dos totais de NF.
 - **Segurança.** Texto que começa com `=`, `+`, `-` ou `@` é gravado como
   texto, para não virar fórmula no Excel. O link do e-mail só é aceito se
   for do Outlook.
@@ -81,7 +105,7 @@ fluxo completo do `main`.
 npm test        # Node 22.18 ou mais novo (roda TypeScript sem compilar)
 ```
 
-São 15 testes, entre eles:
+São 19 testes, entre eles:
 - leitura de tabela;
 - empresa citada fora da tabela;
 - campo ausente;
@@ -90,6 +114,7 @@ São 15 testes, entre eles:
 - ENC/RES;
 - números e datas no formato brasileiro;
 - injeção de fórmula e link suspeito;
+- desconto com totais, NF igual à AF, adiantamento sem NF e e-mail só com anexo;
 - registro completo, reprocessamento e duplicidade.
 
 Para gerar de novo as planilhas de exemplo:
